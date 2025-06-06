@@ -1,5 +1,6 @@
 #include "tagElement.cpp"
-#include <bits/stdc++.h>
+#include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -12,13 +13,16 @@ class tagRam {
         
         // The tagRam is a 2D vector where each row represents a set and each column represents a way
         // This allows for associativity in the cache design
-        vector<vector<tagElement>> tagRam;
-
+        vector<vector<tagElement>> Ram;
+        
         tagRam(int numSets, int associativity)
             : numSets(numSets), associativity(associativity) {
-            tagRam.resize(numSets);
+            Ram.resize(numSets);
             for (int i = 0; i < numSets; ++i) {
-                tagRam[i].resize(associativity);
+                Ram[i].resize(associativity);
             }
         }
-    }
+        ~tagRam() {
+            // Destructor to clean up if necessary
+        }
+    };

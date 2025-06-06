@@ -1,18 +1,19 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <vector>
 using namespace std;
 
 class lruRam {
     public:
-        vector<vector<int>> lruRam;
+        vector<vector<int>> LRU;
         int numSets; // Number of sets in the cache
         int associativity; // Number of ways in the cache
         lruRam(int numSets, int associativity)
             : numSets(numSets), associativity(associativity) {
-            lruRam.resize(numSets);
+            LRU.resize(numSets);
             for (int i = 0; i < numSets; ++i) {
-                lruRam[i].resize(associativity);
+                LRU[i].resize(associativity);
                 for(int j = 0; j < associativity; ++j) {
-                    lruRam[i][j] = j; // Initialize LRU indices, way 0 is MRU, way N-1 is LRU having the highest/worst LRU value
+                    LRU[i][j] = j; // Initialize LRU indices, way 0 is MRU, way N-1 is LRU having the highest/worst LRU value
                 }
             }
         }
@@ -21,13 +22,13 @@ class lruRam {
                 throw out_of_range("Invalid set or way index");
             }
             // Move the accessed way to the MRU position
-            int lruValue = lruRam[setIndex][wayIndex];
+            int lruValue = LRU[setIndex][wayIndex];
             for (int i = 0; i < associativity; ++i) {
-                if (lruRam[setIndex][i] < lruValue) {
-                    lruRam[setIndex][i]++;
+                if (LRU[setIndex][i] < lruValue) {
+                    LRU[setIndex][i]++;
                 }
             }
-            lruRam[setIndex][wayIndex] = 0; // Set the accessed way to MRU
+            LRU[setIndex][wayIndex] = 0; // Set the accessed way to MRU
         }
         int getLRUIndex(int setIndex) {
             if (setIndex < 0 || setIndex >= numSets) {
@@ -36,7 +37,7 @@ class lruRam {
             // Find the way with the highest LRU value (the least recently used)
             int lruWay = 0;
             for (int i = 1; i < associativity; ++i) {
-                if (lruRam[setIndex][i] > lruRam[setIndex][lruWay]) {
+                if (LRU[setIndex][i] > LRU[setIndex][lruWay]) {
                     lruWay = i;
                 }
             }
@@ -48,7 +49,7 @@ class lruRam {
             }
             // Reset LRU values for the specified set
             for (int i = 0; i < associativity; ++i) {
-                lruRam[setIndex][i] = i; // Reset to initial state
+                LRU[setIndex][i] = i; // Reset to initial stat
             }
         }
         ~lruRam() {
@@ -58,10 +59,10 @@ class lruRam {
             for (int i = 0; i < numSets; ++i) {
                 cout << "Set " << i << ": ";
                 for (int j = 0; j < associativity; ++j) {
-                    cout << lruRam[i][j] << " ";
+                    cout << LRU[i][j] << " ";
                 }
                 cout << endl;
             }
         }
 
-}
+};
