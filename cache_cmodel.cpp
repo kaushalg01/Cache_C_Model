@@ -1,83 +1,119 @@
-#include "lruRam.cpp"
-#include "tagRam.cpp"
-#include <iostream>
-#include <vector>
+#include "cache_cmodel.h" // Ensure this header declares class Cache and address_t
 
-using namespace std;
-class Cache {
-    public:
-        int numSets;
-        int blockSize;
-        int cacheSize;
-        int associativity;
-        int blockOffsetBits;
-        int setIndexBits;
-        int tagBits;
-        tagRam T;
-        lruRam L;
-        Cache(int numSets, int blockSize, int cacheSize, int associativity)
-            : numSets(numSets), blockSize(blockSize), cacheSize(cacheSize), associativity(associativity),
-              T(numSets, associativity), L(numSets, associativity) {
-            blockOffsetBits = log2(blockSize);
-            setIndexBits = log2(numSets);
-            tagBits = 32 - (blockOffsetBits + setIndexBits); // Assuming 32-bit addresses
-        }
-        void insert(int setIndex, int wayIndex, int tag);
-        int isHit(int addr);
-        int isEvictionNeeded(int addr);
-        int replaceAddr(int addr, int replaceAddr_tag);
-        ~Cache() {
-            // Destructor to clean up if necessary
-        }
+Cache::Cache(address_t numSets, address_t blockSize, address_t cacheSize, address_t associativity)
+    : numSets(numSets),
+      blockSize(blockSize),
+      cacheSize(cacheSize),
+      associativity(associativity),
+      T(numSets, associativity),
+      L(numSets, associativity) {
+    if (numSets <= 0 || blockSize <= 0 || cacheSize <= 0 || associativity <= 0) {
+        throw invalid_argument("Cache parameters must be positive integers.");
+    }
+    blockOffsetBits = log2(blockSize);
+    setIndexBits = log2(numSets);
+    tagBits = 32 - (blockOffsetBits + setIndexBits); // Assuming address_t is 32 bits
+}
 
-};
+void Cache::insert(address_t addr, address_t wayIndex) {
 
-void Cache::insert(int setIndex, int wayIndex, int tag) {
-    
-    if (setIndex < 0 || setIndex >= numSets || wayIndex < 0 || wayIndex >= associativity) {
+    address_t offsetNumb = addr & ((1 << blockOffsetBits) - 1);
+    address_t setNumb = addr & (((1 << ((setIndexBits + blockOffsetBits))) - 1) - (((1 << blockOffsetBits )) - 1)); 
+    address_t tagNumb = addr & ((((1 << (tagBits + setIndexBits + blockOffsetBits))) - 1) - (((1 << (setIndexBits + blockOffsetBits))) - 1)); 
+    if (setNumb < 0 || setNumb >= numSets || wayIndex < 0 || wayIndex >= associativity) {
         throw out_of_range("Invalid set or way index");
     }
-    T[setIndex][wayIndex].tag = tag;
-    T[setIndex][wayIndex].valid = true;
-    T[setIndex][wayIndex].dirty = false; // Assuming new insertions are not dirty
-    L.updateLRU(setIndex, wayIndex); // Update LRU order
+    T.setTag(setNumb, wayIndex, tagNumb);
+    T.setValid(setNumb, wayIndex, true);
+    T.setDirty(setNumb, wayIndex, false); // Assuming new insertions are not dirty
+    L.updateLRU(setNumb, wayIndex); // Update LRU order
 }
-int Cache::isHit(int addr)
+
+bool Cache::isHit(address_t addr, address_t* way_hit)
 { 
-  int offsetNumb = addr & ((1 << blockOffsetBits) - 1);
-  int setNumb = addr & ((1 << ((setIndexBits + blockOffsetBits)) - 1) - ((1 << blockOffsetBits ) - 1)); 
-  int tagNumb = addr & (((1 << (tagBits + setIndexBits + blockOffsetBits)) - 1) - ((1 << (setIndexBits + blockOffsetBits)) - 1));
-   for (int ii = 0; ii < associativity; ii++) {
-        if (T[setNumb][ii].valid && T[setNumb][ii].tag == tagNumb) {
-            return true; // Cache hit
+  address_t offsetNumb = addr & ((1 << blockOffsetBits) - 1);
+  address_t setNumb = addr & (((1 << ((setIndexBits + blockOffsetBits))) - 1) - (((1 << blockOffsetBits )) - 1)); 
+  address_t tagNumb = addr & ((((1 << (tagBits + setIndexBits + blockOffsetBits))) - 1) - (((1 << (setIndexBits + blockOffsetBits))) - 1));
+   for (address_t ii = 0; ii < associativity; ii++) {
+        if (T.getValid(setNumb, ii) && T.getTag(setNumb, ii) == tagNumb) {
             L.updateLRU(setNumb, ii); // Update LRU order
+            *way_hit = ii; // Store the way index of the hit
+            return true; // Cache hit
         }
     }
     return false; // Cache miss
 }
-int Cache::isEvictionNeeded(int addr)
+address_t Cache::evictWay(address_t addr)
 {
-    int offsetNumb = addr & ((1 << blockOffsetBits) - 1);
-    int setNumb = addr & ((1 << ((setIndexBits + blockOffsetBits)) - 1) - ((1 << blockOffsetBits ) - 1)); 
-    for (int ii = 0; ii < associativity; ii++) {
-        if (!T[setNumb][ii].valid) {
-            return false; // No eviction needed, found an empty slot
-        }
-    }
-    return true; // Eviction needed, all slots are valid
+    address_t offsetNumb = addr & ((1 << blockOffsetBits) - 1);
+    address_t setNumb = addr & (((1 << ((setIndexBits + blockOffsetBits))) - 1) - ((1 << blockOffsetBits ) - 1)); 
+    address_t tagNumb = addr & (((1 << (tagBits + setIndexBits + blockOffsetBits)) - 1) - ((1 << (setIndexBits + blockOffsetBits)) - 1));
+    
+    // Find the least recently used way in the set
+    address_t lruWay = L.getLRUIndex(setNumb);
+    
+    // Evict the least recently used way
+    T.setValid(setNumb, lruWay, false); // Mark as invalid
+    T.setTag(setNumb, lruWay, tagNumb); // Update tag
+    T.setDirty(setNumb, lruWay, false); // Assuming eviction does not dirty the cache line
+    L.updateLRU(setNumb, lruWay); // Update LRU order
+    return lruWay; // Return the index of the evicted way
 }
-int Cache::replaceAddr(int addr, int replaceAddr_tag)
+// This function replaces the address in the cache with a new tag.
+// It checks if the address exists in the cache and updates the tag and dirty bit accordingly.
+// If the address does not exist, it returns false.
+// If the address exists, it updates the tag and LRU order, returning true.
+address_t Cache::replaceAddr(address_t addr, address_t newAddr, address_t setNumb, int* flag)
 {
-    int offsetNumb = addr & ((1 << blockOffsetBits) - 1);
-    int setNumb = addr & ((1 << ((setIndexBits + blockOffsetBits)) - 1) - ((1 << blockOffsetBits ) - 1)); 
-    int tagNumb = addr & (((1 << (tagBits + setIndexBits + blockOffsetBits)) - 1) - ((1 << (setIndexBits + blockOffsetBits)) - 1));
-    for (int ii = 0; ii < associativity; ii++) {
-        if (T[setNumb][ii].valid && T[setNumb][ii].tag == replaceAddr_tag) {
-            T[setNumb][ii].tag = tagNumb;
-            T[setNumb][ii].dirty = false; // Assuming new insertions are not dirty
+    address_t old_tagNumb = addr & (((1 << (tagBits + setIndexBits + blockOffsetBits)) - 1) - ((1 << (setIndexBits + blockOffsetBits)) - 1));
+    address_t new_tagNumb = newAddr & (((1 << (tagBits + setIndexBits + blockOffsetBits)) - 1) - ((1 << (setIndexBits + blockOffsetBits)) - 1));
+    for (address_t ii = 0; ii < associativity; ii++) {
+        if (T.getValid(setNumb, ii) && T.getTag(setNumb, ii) == old_tagNumb) {
+            T.setTag(setNumb, ii, new_tagNumb); // Update the tag
+            T.setValid(setNumb, ii, true); // Ensure the way is valid
+            // TODO:: // If the way is dirty, we might need to handle write-back logic here
+            // For simplicity, we assume the way is not dirty on replacement
+            T.setDirty(setNumb, ii, false); // Assuming new insertions are not dirty
             L.updateLRU(setNumb, ii); // Update LRU order
-            return true; // Replacement successful
+            cout << "Replaced address in cache with new tag: " << hex << new_tagNumb << " at way index: " << ii << endl;
+            cout << "Old tag: " << hex << old_tagNumb << " replaced with new tag: " << hex << new_tagNumb << endl;
+            cout << "Set number: " << setNumb << endl;
+            *flag = 1;
+            return ii;
         }
     }
-    return false; // Replacement failed, address not found
+    *flag = 0;
+    return 0; // Replacement failed, address not found
 }
+
+address_t Cache::freeWayExists(address_t addr) {
+    address_t offsetNumb = addr & ((1 << blockOffsetBits) - 1);
+    address_t setNumb = addr & (((1 << ((setIndexBits + blockOffsetBits))) - 1) - ((1 << blockOffsetBits ) - 1)); 
+    for (address_t ii = associativity; ii >= 0; ii--) {
+        if (!T.getValid(setNumb, ii)) {
+            return ii; // Return the index of the first free way
+        }
+    }
+    return 0; // No free way exists
+}
+
+void Cache::printCacheState(){
+    cout << "Cache State:" << endl;
+    for (address_t i = 0; i < numSets; ++i) {
+        cout << "Set " << i << ": ";
+        for (address_t j = 0; j < associativity; ++j) {
+            if (T.getValid(i, j)) {
+                cout << "Way " << j << " - Tag: " << hex << T.getTag(i, j) 
+                     << ", Dirty: " << T.getDirty(i, j) << ", Valid: " << T.getValid(i, j) << " | ";
+            } else {
+                cout << "Way " << j << " - Invalid | ";
+            }
+        }
+        cout << endl;
+    }
+}
+Cache::~Cache() {
+    // Destructor to clean up if necessary
+    // In this case, we don't have dynamic memory allocation, so nothing specific to do
+}
+// The destructor will automatically clean up the tagRam and lruRam objects
