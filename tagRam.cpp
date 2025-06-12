@@ -15,44 +15,51 @@ tagRam::~tagRam() {
 
 void tagRam::setTag(address_t setIndex, address_t wayIndex, address_t tag) {
     if (setIndex < 0 || setIndex >= numSets || wayIndex < 0 || wayIndex >= associativity) {
-        throw out_of_range("Invalid set or way index");
+        cout << "setValid called with setIndex: " << setIndex << ", wayIndex: " << wayIndex << endl;
+        throw out_of_range("Invalid set or way index in setTag");
     }
     Ram[setIndex][wayIndex].tag = tag;
 }
 
 void tagRam::setValid(address_t setIndex, address_t wayIndex, bool valid) {
     if (setIndex < 0 || setIndex >= numSets || wayIndex < 0 || wayIndex >= associativity) {
-        throw out_of_range("Invalid set or way index");
+        cout << "setValid called with setIndex: " << setIndex << ", wayIndex: " << wayIndex << endl;
+        throw out_of_range("Invalid set or way index in setValid");
     }
     Ram[setIndex][wayIndex].valid = valid;
 }
 void tagRam::setDirty(address_t setIndex, address_t wayIndex, bool dirty) {
     if (setIndex < 0 || setIndex >= numSets || wayIndex < 0 || wayIndex >= associativity) {
-        throw out_of_range("Invalid set or way index");
+        cout << "setValid called with setIndex: " << setIndex << ", wayIndex: " << wayIndex << endl;
+        throw out_of_range("Invalid set or way index in setDirty");
     }
     Ram[setIndex][wayIndex].dirty = dirty;      
 }
 tagElement tagRam::getTagElement(address_t setIndex, address_t wayIndex) {
     if (setIndex < 0 || setIndex >= numSets || wayIndex < 0 || wayIndex >= associativity) {
-        throw out_of_range("Invalid set or way index");
+        cout << "setValid called with setIndex: " << setIndex << ", wayIndex: " << wayIndex << endl;
+        throw out_of_range("Invalid set or way index in getTagElement");
     }
     return Ram[setIndex][wayIndex];
 }
 address_t tagRam::getTag(address_t setIndex, address_t wayIndex) {
     if (setIndex < 0 || setIndex >= numSets || wayIndex < 0 || wayIndex >= associativity) {
-        throw out_of_range("Invalid set or way index");
+        cout << "setValid called with setIndex: " << setIndex << ", wayIndex: " << wayIndex << endl;
+        throw out_of_range("Invalid set or way index in getTag");
     }
     return  Ram[setIndex][wayIndex].tag;
 }
 bool tagRam::getValid(address_t setIndex, address_t wayIndex) {
     if (setIndex < 0 || setIndex >= numSets || wayIndex < 0 || wayIndex >= associativity) {
-        throw out_of_range("Invalid set or way index");
+        cout << "setValid called with setIndex: " << setIndex << ", wayIndex: " << wayIndex << endl;
+        throw out_of_range("Invalid set or way index in getValid");
     }
     return Ram[setIndex][wayIndex].valid;
 }
 bool tagRam::getDirty(address_t setIndex, address_t wayIndex) {
     if (setIndex < 0 || setIndex >= numSets || wayIndex < 0 || wayIndex >= associativity) {
-        throw out_of_range("Invalid set or way index");
+        cout << "setValid called with setIndex: " << setIndex << ", wayIndex: " << wayIndex << endl;
+        throw out_of_range("Invalid set or way index in getDirty");
     }
     return Ram[setIndex][wayIndex].dirty;
 }

@@ -42,6 +42,7 @@ srand(time(0)); // Seed for random number generation
 
     for (address_t ii = 0; ii < addr_acess.size(); ii++) {
         address_t addr = addr_acess[ii];
+        cout << "Processing address: " << hex << addr << endl;
         if(myCache.isHit(addr_acess[ii], &way_hit)) {
             // Cache hit
             cout << "Cache hit for address: " << hex << addr_acess[ii] << "way hit" << way_hit << endl;

@@ -21,7 +21,8 @@ void Cache::insert(address_t addr, address_t wayIndex) {
     address_t setNumb = addr & (((1 << ((setIndexBits + blockOffsetBits))) - 1) - (((1 << blockOffsetBits )) - 1)); 
     address_t tagNumb = addr & ((((1 << (tagBits + setIndexBits + blockOffsetBits))) - 1) - (((1 << (setIndexBits + blockOffsetBits))) - 1)); 
     if (setNumb < 0 || setNumb >= numSets || wayIndex < 0 || wayIndex >= associativity) {
-        throw out_of_range("Invalid set or way index");
+        cout << "setValid called with setIndex: " << setNumb << ", wayIndex: " << wayIndex << endl;
+        throw out_of_range("Invalid set or way index in insert");
     }
     T.setTag(setNumb, wayIndex, tagNumb);
     T.setValid(setNumb, wayIndex, true);
@@ -34,6 +35,7 @@ bool Cache::isHit(address_t addr, address_t* way_hit)
   address_t offsetNumb = addr & ((1 << blockOffsetBits) - 1);
   address_t setNumb = addr & (((1 << ((setIndexBits + blockOffsetBits))) - 1) - (((1 << blockOffsetBits )) - 1)); 
   address_t tagNumb = addr & ((((1 << (tagBits + setIndexBits + blockOffsetBits))) - 1) - (((1 << (setIndexBits + blockOffsetBits))) - 1));
+  cout << "anded result" << hex << (1 << ((setIndexBits + blockOffsetBits))) << " " << (1 << blockOffsetBits) << endl; 
    for (address_t ii = 0; ii < associativity; ii++) {
         if (T.getValid(setNumb, ii) && T.getTag(setNumb, ii) == tagNumb) {
             L.updateLRU(setNumb, ii); // Update LRU order

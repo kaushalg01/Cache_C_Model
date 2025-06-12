@@ -16,7 +16,8 @@ lruRam::lruRam(address_t numSets, address_t associativity)
 }
 void lruRam::updateLRU(address_t setIndex, address_t wayIndex) {
     if (setIndex < 0 || setIndex >= numSets || wayIndex < 0 || wayIndex >= associativity) {
-        throw out_of_range("Invalid set or way index");
+        cout << "setValid called with setIndex: " << setIndex << ", wayIndex: " << wayIndex << endl;
+        throw out_of_range("Invalid set or way index in updateLRU");
     }
     // Move the accessed way to the MRU position
     address_t lruValue = LRU[setIndex][wayIndex];
@@ -29,7 +30,8 @@ void lruRam::updateLRU(address_t setIndex, address_t wayIndex) {
 }
 address_t lruRam::getLRUIndex(address_t setIndex) {
     if (setIndex < 0 || setIndex >= numSets) {
-        throw out_of_range("Invalid set index");
+        cout << "setValid called with setIndex: " << setIndex << ", wayIndex: " << setIndex << endl;
+        throw out_of_range("Invalid set index in getLRUIndex");
     }
     // Find the way with the highest LRU value (the least recently used)
     address_t lruWay = 0;
@@ -42,7 +44,8 @@ address_t lruRam::getLRUIndex(address_t setIndex) {
 }
 void lruRam::resetLRU(address_t setIndex) {
     if (setIndex < 0 || setIndex >= numSets) {
-        throw out_of_range("Invalid set index");
+        cout << "setValid called with setIndex: " << setIndex << ", wayIndex: " << setIndex << endl;
+        throw out_of_range("Invalid set index in resetLRU");
     }
     // Reset LRU values for the specified set
     for (address_t i = 0; i < associativity; ++i) {
