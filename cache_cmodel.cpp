@@ -37,12 +37,7 @@ bool Cache::isHit(address_t addr, address_t* way_hit)
   address_t tagNumb = (addr & ((((1 << (tagBits + setIndexBits + blockOffsetBits))) - 1) - (((1 << (setIndexBits + blockOffsetBits))) - 1))) >> (setIndexBits + blockOffsetBits);
   cout << "OffsetNumb " << hex << offsetNumb << endl;
   cout << "setNumb " << hex << setNumb <<endl;
-  
-  cout <<"blockOffsetBits" << hex << (1  << blockOffsetBits) << endl;
-  cout << "blockoffset - 1" << hex << ((1 << (blockOffsetBits)) - 1) << endl;
-  cout << "setindex + blockoffset bits " << hex << ((1 << (setIndexBits + blockOffsetBits)) - 1) << endl;
-  cout << "setIndex + blockoffset bits  - blockOffsetbits" << hex << (((1 << ((setIndexBits + blockOffsetBits))) - 1) - (((1 << blockOffsetBits )) - 1)) << endl;
-   for (address_t ii = 0; ii < associativity; ii++) {
+  for (address_t ii = 0; ii < associativity; ii++) {
         if (T.getValid(setNumb, ii) && T.getTag(setNumb, ii) == tagNumb) {
             L.updateLRU(setNumb, ii); // Update LRU order
             *way_hit = ii; // Store the way index of the hit
