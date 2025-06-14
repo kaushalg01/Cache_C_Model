@@ -11,7 +11,7 @@
         "tagRam.cpp",
         "lruRam.cpp",
         "-o",
-        "cache_sim"
+        "cache_sim.exe"
       ],
       "group": {
         "kind": "build",

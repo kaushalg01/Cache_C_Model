@@ -1,1 +1,2 @@
 This project implements C-model of a reconfigurable cache which receives traffic from input.txt file. It checks for basic functionalities like hit, miss and eviction. 
+Input addresses have been given in a way that leads to eviction in set A for the 7th address in the list

@@ -5,13 +5,13 @@
       "name": "Run Cache Simulator",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/cache_sim",
+      "program": "${workspaceFolder}/cache_sim.exe",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
       "externalConsole": false,
-      "MIMode": "lldb"
+      "MIMode": "gdb"
     }
   ]
 }

@@ -17,9 +17,9 @@ Cache::Cache(address_t numSets, address_t blockSize, address_t cacheSize, addres
 
 void Cache::insert(address_t addr, address_t wayIndex) {
 
-    address_t offsetNumb = addr & ((1 << blockOffsetBits) - 1);
-    address_t setNumb = addr & (((1 << ((setIndexBits + blockOffsetBits))) - 1) - (((1 << blockOffsetBits )) - 1)); 
-    address_t tagNumb = addr & ((((1 << (tagBits + setIndexBits + blockOffsetBits))) - 1) - (((1 << (setIndexBits + blockOffsetBits))) - 1)); 
+  address_t offsetNumb = addr & ((1 << blockOffsetBits) - 1);
+  address_t setNumb = (addr & (((1 << ((setIndexBits + blockOffsetBits))) - 1) - (((1 << blockOffsetBits )) - 1))) >> blockOffsetBits; 
+  address_t tagNumb = (addr & ((((1 << (tagBits + setIndexBits + blockOffsetBits))) - 1) - (((1 << (setIndexBits + blockOffsetBits))) - 1))) >> (setIndexBits + blockOffsetBits);
     if (setNumb < 0 || setNumb >= numSets || wayIndex < 0 || wayIndex >= associativity) {
         throw out_of_range("Invalid set or way index");
     }
@@ -32,8 +32,15 @@ void Cache::insert(address_t addr, address_t wayIndex) {
 bool Cache::isHit(address_t addr, address_t* way_hit)
 { 
   address_t offsetNumb = addr & ((1 << blockOffsetBits) - 1);
-  address_t setNumb = addr & (((1 << ((setIndexBits + blockOffsetBits))) - 1) - (((1 << blockOffsetBits )) - 1)); 
-  address_t tagNumb = addr & ((((1 << (tagBits + setIndexBits + blockOffsetBits))) - 1) - (((1 << (setIndexBits + blockOffsetBits))) - 1));
+  address_t setNumb = (addr & (((1 << ((setIndexBits + blockOffsetBits))) - 1) - (((1 << blockOffsetBits )) - 1))) >> blockOffsetBits; 
+  address_t tagNumb = (addr & ((((1 << (tagBits + setIndexBits + blockOffsetBits))) - 1) - (((1 << (setIndexBits + blockOffsetBits))) - 1))) >> (setIndexBits + blockOffsetBits);
+  cout << "OffsetNumb " << hex << offsetNumb << endl;
+  cout << "setNumb " << hex << setNumb <<endl;
+  
+  cout <<"blockOffsetBits" << hex << (1  << blockOffsetBits) << endl;
+  cout << "blockoffset - 1" << hex << ((1 << (blockOffsetBits)) - 1) << endl;
+  cout << "setindex + blockoffset bits " << hex << ((1 << (setIndexBits + blockOffsetBits)) - 1) << endl;
+  cout << "setIndex + blockoffset bits  - blockOffsetbits" << hex << (((1 << ((setIndexBits + blockOffsetBits))) - 1) - (((1 << blockOffsetBits )) - 1)) << endl;
    for (address_t ii = 0; ii < associativity; ii++) {
         if (T.getValid(setNumb, ii) && T.getTag(setNumb, ii) == tagNumb) {
             L.updateLRU(setNumb, ii); // Update LRU order
@@ -45,15 +52,16 @@ bool Cache::isHit(address_t addr, address_t* way_hit)
 }
 address_t Cache::evictWay(address_t addr)
 {
-    address_t offsetNumb = addr & ((1 << blockOffsetBits) - 1);
-    address_t setNumb = addr & (((1 << ((setIndexBits + blockOffsetBits))) - 1) - ((1 << blockOffsetBits ) - 1)); 
-    address_t tagNumb = addr & (((1 << (tagBits + setIndexBits + blockOffsetBits)) - 1) - ((1 << (setIndexBits + blockOffsetBits)) - 1));
+
+  address_t offsetNumb = addr & ((1 << blockOffsetBits) - 1);
+  address_t setNumb = (addr & (((1 << ((setIndexBits + blockOffsetBits))) - 1) - (((1 << blockOffsetBits )) - 1))) >> blockOffsetBits; 
+  address_t tagNumb = (addr & ((((1 << (tagBits + setIndexBits + blockOffsetBits))) - 1) - (((1 << (setIndexBits + blockOffsetBits))) - 1))) >> (setIndexBits + blockOffsetBits);
     
     // Find the least recently used way in the set
     address_t lruWay = L.getLRUIndex(setNumb);
     
     // Evict the least recently used way
-    T.setValid(setNumb, lruWay, false); // Mark as invalid
+    T.setValid(setNumb, lruWay, true);
     T.setTag(setNumb, lruWay, tagNumb); // Update tag
     T.setDirty(setNumb, lruWay, false); // Assuming eviction does not dirty the cache line
     L.updateLRU(setNumb, lruWay); // Update LRU order
@@ -65,8 +73,8 @@ address_t Cache::evictWay(address_t addr)
 // If the address exists, it updates the tag and LRU order, returning true.
 address_t Cache::replaceAddr(address_t addr, address_t newAddr, address_t setNumb, int* flag)
 {
-    address_t old_tagNumb = addr & (((1 << (tagBits + setIndexBits + blockOffsetBits)) - 1) - ((1 << (setIndexBits + blockOffsetBits)) - 1));
-    address_t new_tagNumb = newAddr & (((1 << (tagBits + setIndexBits + blockOffsetBits)) - 1) - ((1 << (setIndexBits + blockOffsetBits)) - 1));
+    address_t old_tagNumb = (addr & (((1 << (tagBits + setIndexBits + blockOffsetBits)) - 1) - ((1 << (setIndexBits + blockOffsetBits)) - 1))) >> (setIndexBits + blockOffsetBits);
+    address_t new_tagNumb = (newAddr & (((1 << (tagBits + setIndexBits + blockOffsetBits)) - 1) - ((1 << (setIndexBits + blockOffsetBits)) - 1))) >> (setIndexBits + blockOffsetBits);
     for (address_t ii = 0; ii < associativity; ii++) {
         if (T.getValid(setNumb, ii) && T.getTag(setNumb, ii) == old_tagNumb) {
             T.setTag(setNumb, ii, new_tagNumb); // Update the tag
@@ -86,14 +94,23 @@ address_t Cache::replaceAddr(address_t addr, address_t newAddr, address_t setNum
     return 0; // Replacement failed, address not found
 }
 
-address_t Cache::freeWayExists(address_t addr) {
-    address_t offsetNumb = addr & ((1 << blockOffsetBits) - 1);
-    address_t setNumb = addr & (((1 << ((setIndexBits + blockOffsetBits))) - 1) - ((1 << blockOffsetBits ) - 1)); 
-    for (address_t ii = associativity; ii >= 0; ii--) {
+address_t Cache::freeWayExists(address_t addr, int *flag) {
+  address_t offsetNumb = addr & ((1 << blockOffsetBits) - 1);
+  address_t setNumb = (addr & (((1 << ((setIndexBits + blockOffsetBits))) - 1) - (((1 << blockOffsetBits )) - 1))) >> blockOffsetBits; 
+  address_t tagNumb = (addr & ((((1 << (tagBits + setIndexBits + blockOffsetBits))) - 1) - (((1 << (setIndexBits + blockOffsetBits))) - 1))) >> (setIndexBits + blockOffsetBits);
+
+  cout << "In free way exists function" << endl;
+  cout << "OffsetNumb " << hex << offsetNumb << endl;
+  cout << "setNumb " << hex << setNumb << endl;
+  cout << "tagNumb " << hex << tagNumb << endl;
+  cout <<endl;
+    for (address_t ii = associativity - 1 ; ii != 0XFFFFFFFF; ii--) {
         if (!T.getValid(setNumb, ii)) {
+            *flag = 1;
             return ii; // Return the index of the first free way
         }
     }
+    *flag = 0;
     return 0; // No free way exists
 }
 

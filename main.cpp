@@ -23,6 +23,7 @@ srand(time(0)); // Seed for random number generation
     address_t cacheSize = numSets * blockSize * associativity; // Total cache size
     address_t way_hit = -1; // Variable to store the way index of a hit
     int flag = 0; // Flag to indicate if a replacement occurred
+    int flag_freeway = 0; // Flag to indicate if a free way exists
     vector<address_t> addr_acess;
 
     ifstream inputFile("input.txt");
@@ -36,12 +37,16 @@ srand(time(0)); // Seed for random number generation
         }
     }
     inputFile.close();
+    for (int i = 0; i < addr_acess.size(); i++) {
+        cout << "Address read: " << hex << addr_acess[i] << endl;
+    }
 
     // Create a Cache object
     Cache myCache(numSets, blockSize, cacheSize, associativity);
 
     for (address_t ii = 0; ii < addr_acess.size(); ii++) {
         address_t addr = addr_acess[ii];
+        myCache.L.printLRU(); // Print the LRU state for debugging
         if(myCache.isHit(addr_acess[ii], &way_hit)) {
             // Cache hit
             cout << "Cache hit for address: " << hex << addr_acess[ii] << "way hit" << way_hit << endl;
@@ -50,11 +55,11 @@ srand(time(0)); // Seed for random number generation
             // Cache miss
             cout << "Cache miss for address: " << hex << addr_acess[ii] << endl;
             cout << "Checking if free way exists..." << endl;
-            address_t freeWay = myCache.freeWayExists(addr_acess[ii]);
-            way_hit = freeWay;
-            if (freeWay != -1) {
+            address_t freeWay = myCache.freeWayExists(addr_acess[ii], &flag_freeway);
+            if (flag_freeway != 0) {
                 // Free way exists, insert the address
                 cout << "Free way found at index: " << freeWay << endl;
+                way_hit = freeWay;
                 myCache.insert(addr_acess[ii], freeWay);
             } else {
                 // No free way, evict a way

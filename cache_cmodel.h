@@ -2,6 +2,7 @@
 #include "tagRam.h"
 #include <iostream>
 #include <vector>
+#include <cmath>
 typedef unsigned int address_t; // Define address_t as an unsigned int
 
 using namespace std;
@@ -25,7 +26,7 @@ class Cache {
         // If the address does not exist, it returns false.
         // If the address exists, it updates the tag and LRU order, returning true.
         address_t replaceAddr(address_t addr, address_t newAddr, address_t setNumb, int* flag);
-        address_t freeWayExists(address_t addr);
+        address_t freeWayExists(address_t addr, int *flag);
         void printCacheState();
         ~Cache();
 };
